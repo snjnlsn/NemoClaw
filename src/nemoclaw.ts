@@ -68,6 +68,7 @@ const sandboxState = require("./lib/sandbox-state");
 const { ensureOllamaAuthProxy } = require("./lib/onboard");
 const skillInstall = require("./lib/skill-install");
 const { parseSandboxPhase } = require("./lib/gateway-state");
+const { runApiCommand } = require("./lib/api");
 
 // ── Global commands ──────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ const GLOBAL_COMMANDS = new Set([
   "status",
   "debug",
   "uninstall",
+  "api",
   "credentials",
   "backup-all",
   "upgrade-sandboxes",
@@ -2286,6 +2288,9 @@ function help() {
     nemoclaw stop                    Stop all services
     nemoclaw status                  Show sandbox list and service status
 
+  ${G}Local API:${R}
+    nemoclaw api ${D}[port]${R}              Start local HTTP API + SSE for sandbox control ${D}(default :3456)${R}
+
   Troubleshooting:
     nemoclaw debug [--quick] [--sandbox NAME]
                                      Collect diagnostics for bug reports
@@ -2357,6 +2362,16 @@ const [cmd, ...args] = process.argv.slice(2);
       case "uninstall":
         uninstall(args);
         break;
+      case "api": {
+        const port = parseInt(args.find((a) => /^\d+$/.test(a)) || "3456", 10);
+        runApiCommand({
+          port,
+          log: console.log,
+          error: console.error,
+          onExit: (code) => process.exit(code),
+        });
+        break;
+      }
       case "credentials":
         await credentialsCommand(args);
         break;
